@@ -1,0 +1,14 @@
+# Archivos temporales
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS
+.DS_Store
+
+# Secretos — nunca versionar
+*.key
+*.pem
+*.env
+secrets/
