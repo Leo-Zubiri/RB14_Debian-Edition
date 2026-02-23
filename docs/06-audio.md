@@ -1,6 +1,6 @@
 # 06 — Audio
 
-## Estado: Pendiente
+## Estado: Altavoces internos — Completado | PipeWire / BT — Pendiente
 
 ---
 
@@ -91,7 +91,79 @@ bluetoothctl
 
 ---
 
-## 4. Altavoces internos — EasyEffects
+## 4. Altavoces internos — HDA codec fix (servicio systemd)
+
+### Contexto
+
+El codec Realtek ALC298 del Razer Blade 14 requiere una secuencia de inicialización
+via `hda-verb` que **no persiste** entre reinicios ni después de suspender el equipo.
+Sin este fix, los altavoces internos no producen sonido aunque PipeWire los detecte.
+
+La solución usa dos mecanismos:
+- Un **servicio systemd** (`Type=oneshot`) que corre el fix en cada arranque.
+- Un **hook de systemd-sleep** que lo re-ejecuta tras salir de suspensión.
+
+### Scripts
+
+```
+scripts/rb14_speakers/
+├── RB14_2023_enable_internal_speakers_ver2.sh   # Fix (detecta ALC298 automáticamente)
+└── install_rb14_speakers.sh                     # Instalador/desinstalador
+```
+
+### Instalación
+
+```bash
+cd ~/Documents/RB14_Debian-Edition/scripts/rb14_speakers
+sudo bash install_rb14_speakers.sh install
+```
+
+El instalador:
+1. Instala `alsa-tools` (contiene `hda-verb`) si no está presente.
+2. Copia el script a `/usr/local/lib/rb14-speakers/fix.sh`.
+3. Crea `/etc/systemd/system/rb14-speakers.service`.
+4. Crea `/usr/lib/systemd/system-sleep/rb14-speakers` (hook de resume).
+5. Habilita e inicia el servicio.
+
+### Verificación
+
+```bash
+systemctl status rb14-speakers.service
+# Active: active (exited) → correcto para Type=oneshot
+
+systemctl is-enabled rb14-speakers.service
+# enabled
+
+journalctl -u rb14-speakers.service -n 50 --no-pager
+```
+
+### Cómo funciona
+
+```
+Boot
+ └─► sound.target (ALSA listo)
+      └─► rb14-speakers.service (oneshot)
+           └─► udevadm settle + sleep 5 + fix.sh
+                └─► ~1999 hda-verb → inicializa codec ALC298
+
+Suspend/resume
+ └─► systemd-sleep (post/*)
+      └─► /usr/lib/systemd/system-sleep/rb14-speakers
+           └─► re-ejecuta fix.sh
+```
+
+### Desinstalación
+
+```bash
+sudo bash install_rb14_speakers.sh uninstall
+```
+
+Elimina el servicio, el hook de sleep y `/usr/local/lib/rb14-speakers/`.
+El script original no se toca.
+
+---
+
+## 5. Altavoces internos — EasyEffects
 
 Los altavoces de la Blade 14 se benefician de EQ y compresion:
 

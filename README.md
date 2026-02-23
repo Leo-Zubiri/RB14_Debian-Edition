@@ -38,7 +38,7 @@
 | 03 | [Seguridad](docs/03-security.md)                             | Firewall, AppArmor, fail2ban, hardening del kernel    | ⏳ Pendiente   |
 | 04 | [Gestión de energía](docs/04-power-management.md)            | TLP, límites de batería, GPU power states             | ⏳ Pendiente   |
 | 05 | [Pantalla](docs/05-display.md)                               | HiDPI, 240 Hz, color profiles, migración X11→Wayland | ✅ Completado  |
-| 06 | [Audio](docs/06-audio.md)                                    | PipeWire, Bluetooth, tuning de altavoces              | ⏳ Pendiente   |
+| 06 | [Audio](docs/06-audio.md)                                    | Altavoces internos (HDA fix), PipeWire, Bluetooth     | 🔧 En progreso |
 | 07 | [Hardware Razer](docs/07-razer-hardware.md)                  | OpenRazer, RGB, teclado, touchpad                     | ⏳ Pendiente   |
 | 08 | [Red y VPN](docs/08-networking.md)                           | DNS seguro, firewall de red, VPN                      | ⏳ Pendiente   |
 | 09 | [Backups](docs/09-backups.md)                                | Timeshift, restic, estrategia de snapshots            | ⏳ Pendiente   |
@@ -46,10 +46,18 @@
 
 ---
 
+## Scripts
+
+| Script | Descripción |
+|--------|-------------|
+| [scripts/rb14_speakers/](scripts/rb14_speakers/) | Fix altavoces internos — servicio systemd + hook de resume |
+
+---
+
 ## Uso
 
 Cada archivo en `docs/` documenta el contexto del problema, los comandos exactos
-ejecutados, el resultado esperado y notas de troubleshooting. Los scripts van en `scripts/`.
+ejecutados, el resultado esperado y notas de troubleshooting.
 
 ```bash
 git log --oneline   # historial de cambios al sistema
