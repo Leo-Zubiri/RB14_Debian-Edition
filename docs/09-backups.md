@@ -1,150 +1,111 @@
 # 09 — Backups
 
-## Estado: Pendiente
+## Estado: Completado
 
 ---
 
 ## Objetivos
 
-- Snapshots del sistema con Timeshift (rollback ante actualizaciones o errores)
-- Backup de datos de usuario con restic o borgbackup
-- Estrategia 3-2-1: 3 copias, 2 medios, 1 offsite
+- Snapshots del sistema con Timeshift para recuperación ante corrupción o actualizaciones problemáticas
 
 ---
 
 ## 1. Timeshift — snapshots del sistema
 
-Timeshift hace snapshots de `/` (excluyendo `/home`) para restauracion rapida.
+Timeshift captura el estado de `/` (sistema operativo, configuración, paquetes) para poder revertir el sistema a un punto anterior. **No hace backup de `/home`** — su propósito es exclusivamente recuperar el sistema operativo, no los datos personales.
 
-### Instalacion
+### ¿Para qué sirve en este equipo?
+
+| Escenario | ¿Timeshift lo cubre? |
+|-----------|----------------------|
+| Actualización que rompe el sistema | ✅ Revertir al snapshot anterior |
+| Kernel nuevo que no inicia | ✅ Restaurar desde live USB |
+| Paquete que corrompe la configuración | ✅ Rollback completo |
+| Pérdida de archivos personales en `/home` | ❌ No (Timeshift excluye `/home` por defecto) |
+| Fallo del disco NVMe | ❌ No (el snapshot está en el mismo disco) |
+
+Para el uso de esta laptop (protección ante problemas del sistema Debian), **Timeshift es suficiente**.
+
+### Instalación
 
 ```bash
 sudo apt install -y timeshift
 ```
 
-### Configuracion
+### Configuración aplicada (via GUI)
 
 ```bash
-sudo timeshift --setup    # wizard interactivo
+sudo timeshift-gtk
 ```
 
-Recomendaciones:
-- Tipo: **RSYNC** (mas compatible que BTRFS si el FS es ext4)
-- Frecuencia: snapshot diario, conservar los ultimos 5
-- Excluir `/home` del snapshot del sistema (backup separado)
+Configuración realizada via el wizard gráfico:
 
-Crear snapshot manual antes de cambios importantes:
+![Timeshift-gtk](assets/Timeshift.png)
+
+- **Modo:** RSYNC (compatible con ext4, no requiere Btrfs)
+- **Destino:** `/dev/nvme0n1p2` — 908.1 GB disponibles
+- **Estado:** activo, 0 snapshots (aún no creados)
+
+> **Nota:** Los snapshots se guardan en la misma unidad NVMe. Esto protege contra corrupción de software pero **no** contra fallo físico del disco.
+
+### Crear snapshots
+
+Antes de cualquier cambio importante (actualización de kernel, drivers, cambios de configuración):
 
 ```bash
-sudo timeshift --create --comments "Antes de instalar NVIDIA drivers"
+sudo timeshift --create --comments "antes de actualizar kernel" --tags B
+```
+
+Tags disponibles: `O` (manual), `B` (boot), `H` (hourly), `D` (daily), `W` (weekly), `M` (monthly).
+
+Ver snapshots existentes:
+
+```bash
 sudo timeshift --list
 ```
 
-Restaurar:
-
-```bash
-sudo timeshift --restore --snapshot '2024-XX-XX_XX-XX-XX'
-```
-
 ---
 
-## 2. Restic — backup de datos de usuario
+## 2. Recuperación ante problemas
 
-Restic es un backup tool moderno, encriptado y eficiente.
+### Caso 1: El sistema inicia pero algo está roto
 
-### Instalacion
-
-```bash
-sudo apt install -y restic
-```
-
-### Inicializar repositorio
-
-En disco externo:
+Desde el sistema en funcionamiento:
 
 ```bash
-restic init --repo /media/razer/DISCO_EXTERNO/backups/blade14
+sudo timeshift --list                        # identificar el snapshot a restaurar
+sudo timeshift --restore --snapshot '2025-XX-XX_XX-XX-XX'
 ```
 
-En almacenamiento remoto (ej. Backblaze B2):
+O via GUI:
 
 ```bash
-restic init --repo b2:BUCKET_NAME:blade14
+sudo timeshift-gtk    # botón Restore
 ```
 
-### Primer backup
+Timeshift reinstala GRUB automáticamente tras la restauración.
 
-```bash
-restic -r /RUTA/AL/REPO backup /home/razer \
-  --exclude="/home/razer/.cache" \
-  --exclude="/home/razer/.local/share/Trash" \
-  --exclude="/home/razer/Downloads" \
-  --tag manual
-```
+### Caso 2: El sistema no inicia (más común tras actualización de kernel)
 
-### Backup automatico con systemd
+1. Arrancar desde un **Live USB de Debian**
+2. Abrir terminal e instalar Timeshift si no está en el live:
+   ```bash
+   sudo apt install -y timeshift
+   ```
+3. Montar la partición del sistema (identificar con `lsblk`):
+   ```bash
+   sudo timeshift --restore --snapshot-device /dev/nvme0n1p2
+   ```
+   O con la GUI del live: `sudo timeshift-gtk`
 
-Crear `/etc/systemd/system/restic-backup.service`:
+4. Timeshift detecta los snapshots existentes, seleccionar el más reciente funcional y restaurar.
 
-```ini
-[Unit]
-Description=Restic Backup
-After=network.target
+### Caso 3: Probar si GRUB tiene entrada de rescate
 
-[Service]
-Type=oneshot
-User=razer
-EnvironmentFile=/etc/restic/env
-ExecStart=/usr/bin/restic -r ${RESTIC_REPOSITORY} backup /home/razer \
-  --exclude="/home/razer/.cache" \
-  --exclude="/home/razer/.local/share/Trash" \
-  --tag auto
-ExecStartPost=/usr/bin/restic -r ${RESTIC_REPOSITORY} forget \
-  --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
-```
+Antes de recurrir al live USB, al encender el equipo probar:
 
-Crear `/etc/systemd/system/restic-backup.timer`:
-
-```ini
-[Unit]
-Description=Restic Backup Timer
-
-[Timer]
-OnCalendar=daily
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-```bash
-sudo systemctl enable --now restic-backup.timer
-systemctl list-timers restic-backup.timer
-```
-
-### Verificar integridad
-
-```bash
-restic -r /RUTA/AL/REPO check
-restic -r /RUTA/AL/REPO snapshots
-```
-
-### Restaurar archivos
-
-```bash
-restic -r /RUTA/AL/REPO restore latest --target /tmp/restore
-restic -r /RUTA/AL/REPO restore latest --target / --include "/home/razer/Documents"
-```
-
----
-
-## 3. Estrategia recomendada
-
-| Tipo | Herramienta | Frecuencia | Destino |
-|------|------------|------------|---------|
-| Sistema | Timeshift | Diario | Disco local (particion separada) |
-| Datos | Restic | Diario | Disco externo |
-| Datos | Restic | Semanal | Nube (B2, S3, etc.) |
+- Mantener `Shift` durante el arranque para mostrar el menú de GRUB
+- Seleccionar una versión anterior del kernel si está disponible (`Advanced options for Debian`)
 
 ---
 

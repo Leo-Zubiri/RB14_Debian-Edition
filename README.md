@@ -35,13 +35,13 @@
 |----|---------------------------------------------------------------|------------------------------------------------------|----------------|
 | 01 | [Post-instalación](docs/01-post-install.md)                  | Fuentes APT, actualización inicial, herramientas base | ⏳ Pendiente   |
 | 02 | [Drivers](docs/02-drivers.md)                                | NVIDIA, PRIME offload, firmware, openrazer            | ✅ Completado  |
-| 03 | [Seguridad](docs/03-security.md)                             | Firewall, AppArmor, fail2ban, hardening del kernel    | ⏳ Pendiente   |
+| 03 | [Seguridad](docs/03-security.md)                             | Firewall, AppArmor, fail2ban, hardening del kernel    | 🔧 En progreso |
 | 04 | [Gestión de energía](docs/04-power-management.md)            | TLP, límites de batería, GPU power states             | ⏳ Pendiente   |
 | 05 | [Pantalla](docs/05-display.md)                               | HiDPI, 240 Hz, color profiles, migración X11→Wayland | ✅ Completado  |
 | 06 | [Audio](docs/06-audio.md)                                    | Altavoces internos (HDA fix), PipeWire, Bluetooth     | 🔧 En progreso |
-| 07 | [Hardware Razer](docs/07-razer-hardware.md)                  | OpenRazer, RGB, teclado, touchpad                     | ⏳ Pendiente   |
+| 07 | [Hardware Razer](docs/07-razer-hardware.md)                  | OpenRazer, RGB, teclado, touchpad                     | 🔧 En progreso |
 | 08 | [Red y VPN](docs/08-networking.md)                           | DNS seguro, firewall de red, VPN                      | ⏳ Pendiente   |
-| 09 | [Backups](docs/09-backups.md)                                | Timeshift, restic, estrategia de snapshots            | ⏳ Pendiente   |
+| 09 | [Backups](docs/09-backups.md)                                | Timeshift — snapshots del sistema                     | ✅ Completado  |
 | 10 | [Software](docs/10-software.md)                              | Paquetes esenciales, Flatpak, herramientas dev        | ⏳ Pendiente   |
 
 ---
