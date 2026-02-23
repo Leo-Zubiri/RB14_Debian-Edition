@@ -1,6 +1,6 @@
 # 03 — Seguridad
 
-## Estado: Pendiente
+## Estado: En Progreso
 
 ---
 
@@ -17,6 +17,31 @@
 
 ## 1. UFW (Firewall)
 
+### Qué trae Debian 13 por defecto
+
+Debian Trixie **no tiene firewall activo por defecto**. Su estado inicial es:
+
+- El kernel usa **nftables** como motor de filtrado de paquetes (desde Debian 10, nftables reemplazó a iptables; el comando `iptables` es ahora un wrapper de compatibilidad que apunta a nftables por debajo).
+- Las tablas de nftables vienen **vacías** — no hay ninguna regla, todo el tráfico está permitido en ambas direcciones.
+- UFW **no está instalado**. Tampoco firewalld ni ningún otro frontend.
+
+En una laptop de uso personal conectada a redes WiFi públicas o domésticas, esto significa que cualquier servicio que se inicie escuchando en red (samba, ssh, un servidor de desarrollo, etc.) queda expuesto sin restricción.
+
+### Por qué UFW
+
+Las alternativas son:
+
+| Herramienta | Complejidad | Uso típico |
+|-------------|-------------|------------|
+| `nftables` directo | Alta — sintaxis propia, sin estado persistente automático | Servidores con reglas complejas |
+| `firewalld` | Media — orientado a zonas, más pesado | Fedora/RHEL, redes con múltiples zonas |
+| `iptables` | Alta — sintaxis verbosa, backend obsoleto en Debian | Legado |
+| **UFW** | **Baja — comandos simples, persiste automáticamente** | **Laptops y desktops personales** |
+
+UFW es un frontend sobre nftables/iptables diseñado para el caso exacto de este equipo: una sola interfaz de red, sin necesidad de reenvío de paquetes, con reglas simples y permanentes entre reinicios.
+
+### Instalación y configuración aplicada
+
 ```bash
 sudo apt install -y ufw
 sudo ufw default deny incoming
@@ -25,10 +50,30 @@ sudo ufw enable
 sudo ufw status verbose
 ```
 
-Reglas opcionales (solo agregar si el servicio existe):
+Resultado obtenido:
+
+```
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+```
+
+### Qué significa cada regla
+
+**`default deny incoming`**
+Rechaza toda conexión entrante que no haya sido explícitamente permitida. Ningún servicio local es accesible desde la red salvo que se añada una regla. Esto cubre el caso de un puerto abierto accidentalmente (servidor de desarrollo, Samba, etc.).
+
+**`default allow outgoing`**
+Permite toda conexión iniciada desde este equipo hacia el exterior. Navegación, actualizaciones, DNS, SSH saliente, todo funciona sin reglas adicionales. En una laptop personal esto es el comportamiento esperado — restringir salida requeriría reglas explícitas para cada servicio y añade fricción sin beneficio real para este perfil de uso.
+
+**`disabled (routed)`**
+El reenvío de paquetes está deshabilitado. Este equipo no actúa como router ni gateway. Correcto para una laptop.
+
+### Reglas opcionales (solo agregar si el servicio existe)
 
 ```bash
-sudo ufw allow ssh          # solo si usas SSH
+sudo ufw allow ssh          # solo si usas SSH entrante
 sudo ufw allow 80/tcp       # solo si corres servidor web
 ```
 
