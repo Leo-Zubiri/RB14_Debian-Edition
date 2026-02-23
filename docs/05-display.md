@@ -1,94 +1,112 @@
 # 05 — Pantalla
 
-## Estado: Pendiente
+## Estado: Completado (HiDPI, GDM, GRUB)
 
 ---
 
-## Objetivos
+## Contexto
 
-- Verificar y configurar 240 Hz en Wayland
-- Escala HiDPI correcta (2560x1600 en 14")
-- Perfil de color
-- Night Light / Redshift
+La pantalla es 2560x1600 en 14". Con NVIDIA híbrido, Debian fuerza **X11** (Wayland
+se deshabilita automáticamente). En X11, las escalas fraccionarias nativas de GNOME
+no están disponibles; la solución es `text-scaling-factor`.
 
 ---
 
-## 1. Resolucion y frecuencia
+## 1. Escala HiDPI — sesion
 
-Verificar modo actual:
-
-```bash
-# En Wayland con GNOME
-wayland-info 2>/dev/null | grep -i refresh || \
-  gdbus call --session \
-    --dest org.gnome.Mutter.DisplayConfig \
-    --object-path /org/gnome/Mutter/DisplayConfig \
-    --method org.gnome.Mutter.DisplayConfig.GetCurrentState
-```
-
-Alternativa con wlr-randr (si disponible):
+Usar el factor de escala de texto de GNOME:
 
 ```bash
-sudo apt install -y wlr-randr
-wlr-randr
+gsettings set org.gnome.desktop.interface text-scaling-factor 1.55
 ```
 
-O via herramienta GNOME:
+Ajustar el valor entre `1.25` y `1.75` según preferencia. Para la pantalla 2560x1600
+de 14 pulgadas, `1.55` ofrece un buen balance entre espacio y legibilidad.
 
-```
-Configuracion > Pantallas > Frecuencia de actualizacion > 240 Hz
+Verificar:
+
+```bash
+gsettings get org.gnome.desktop.interface text-scaling-factor
 ```
 
 ---
 
-## 2. Escala HiDPI
+## 2. Escala en la pantalla de login (GDM)
 
-La pantalla es 2560x1600 en 14". La escala recomendada para GNOME/Wayland es **175%** o **200%**.
-
-Verificar escala actual:
+GDM tiene configuración separada. Para que el login se vea igual que la sesión:
 
 ```bash
-gsettings get org.gnome.desktop.interface scaling-factor
-gsettings get org.gnome.mutter experimental-features
+sudo nano /etc/gdm3/greeter.dconf-defaults
 ```
 
-Habilitar escalado fraccional en GNOME (Wayland):
+Añadir o editar:
+
+```ini
+[org/gnome/desktop/interface]
+text-scaling-factor=1.55
+```
+
+Aplicar los cambios:
 
 ```bash
-gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
+sudo dconf update
+sudo systemctl restart gdm3
 ```
-
-Luego ir a `Configuracion > Pantallas` y seleccionar la escala deseada.
-
-Escala recomendada segun uso:
-- **175%** — balance entre espacio y legibilidad
-- **200%** — maxima legibilidad
 
 ---
 
-## 3. Perfil de color
+## 3. Tamaño del GRUB
+
+El GRUB también tiene configuración independiente. Para agrandarlo:
+
+```bash
+sudo nano /etc/default/grub
+```
+
+Buscar o añadir:
+
+```
+GRUB_GFXMODE=1280x1024x32
+```
+
+Aplicar:
+
+```bash
+sudo update-grub
+```
+
+Usar `1024x768x32` si se quiere el texto aún más grande.
+
+---
+
+## 4. Frecuencia de refresco (240 Hz)
+
+Verificar modo actual en X11:
+
+```bash
+xrandr | grep -E "connected|Hz"
+```
+
+La pantalla debe aparecer con el modo 2560x1600 y la frecuencia activa marcada con `*`.
+La frecuencia se puede cambiar desde `Configuracion > Pantallas`.
+
+---
+
+## 5. Perfil de color
 
 La Blade 14 tiene un panel con perfil sRGB. GNOME puede cargar perfiles ICC.
 
-Instalar colord si no esta:
+Instalar colord si no está:
 
 ```bash
 sudo apt install -y colord
 ```
 
-El perfil de Razer para este panel suele encontrarse en:
-- `/usr/share/color/icc/`
-- O descargarse desde el sitio de Razer / Notebook Check
-
-Cargar perfil:
-
-```bash
-# Via GNOME Settings > Color > Add profile
-```
+Cargar perfil desde GNOME: `Configuracion > Color > Agregar perfil`.
 
 ---
 
-## 4. Night Light
+## 6. Night Light
 
 GNOME incluye Night Light integrado:
 
@@ -99,27 +117,15 @@ Configuracion > Pantallas > Night Light
 O via terminal:
 
 ```bash
-# Activar Night Light
 gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
 gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000
 ```
 
 ---
 
-## 5. Verificacion
-
-```bash
-# Ver informacion del monitor
-sudo apt install -y edid-decode
-sudo get-edid | edid-decode
-
-# Ver backend de render
-glxinfo | grep "OpenGL renderer"
-vulkaninfo --summary 2>/dev/null | head -20
-```
-
----
-
 ## Notas
 
-<!-- Agregar notas y resultados al ejecutar -->
+- La escala fraccional nativa de GNOME (experimental-features) no aplica en X11.
+- `text-scaling-factor` escala el texto y la UI pero no el framebuffer completo;
+  es la solución correcta para X11 en pantallas HiDPI.
+- Los cambios en `greeter.dconf-defaults` requieren `dconf update` para aplicarse.

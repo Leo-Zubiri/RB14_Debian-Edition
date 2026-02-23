@@ -15,26 +15,33 @@
 
 ## 1. Fuentes APT
 
-Editar `/etc/apt/sources.list` para incluir los repositorios necesarios
-(en Debian Trixie los componentes non-free estan separados):
+La instalacion por defecto de Debian Trixie solo incluye `main non-free-firmware`.
+Para instalar drivers NVIDIA y otro software propietario se necesita agregar
+`contrib` y `non-free`.
+
+Estado inicial del sources.list:
+```
+deb http://deb.debian.org/debian trixie main non-free-firmware
+```
+
+Agregar `contrib non-free` a todas las entradas con un solo comando:
 
 ```bash
-sudo nano /etc/apt/sources.list
+sudo sed -i \
+  -e 's/trixie main non-free-firmware$/trixie main contrib non-free non-free-firmware/' \
+  -e 's/trixie-updates main non-free-firmware$/trixie-updates main contrib non-free non-free-firmware/' \
+  -e 's/trixie-security main non-free-firmware$/trixie-security main contrib non-free non-free-firmware/' \
+  -e 's/trixie-backports main non-free-firmware$/trixie-backports main contrib non-free non-free-firmware/' \
+  /etc/apt/sources.list
 ```
 
-Contenido recomendado:
-
-```
-deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-```
-
-Verificar:
+Verificar resultado:
 
 ```bash
-grep -E "^deb" /etc/apt/sources.list
+grep -E "^deb " /etc/apt/sources.list
 ```
+
+Cada linea debe terminar en `contrib non-free non-free-firmware`.
 
 ---
 
@@ -49,17 +56,23 @@ sudo apt autoremove -y && sudo apt autoclean
 
 ## 3. Herramientas base
 
+Minimo necesario para el setup de esta maquina:
+
 ```bash
 sudo apt install -y \
-  git curl wget vim htop tree \
-  build-essential dkms \
-  apt-transport-https ca-certificates gnupg \
-  lsb-release software-properties-common \
-  unzip p7zip-full \
-  net-tools nmap traceroute \
-  rsync \
-  bash-completion
+  build-essential dkms linux-headers-$(uname -r) \
+  git curl \
+  unzip
 ```
+
+Razon de cada paquete:
+- `build-essential` + `dkms` + `linux-headers` — requeridos para el driver NVIDIA y modulos del kernel
+- `git` — control de versiones de esta documentacion
+- `curl` — usado por instaladores de nvm, restic, etc.
+- `unzip` — no viene por defecto, necesario para varios instaladores
+
+El resto (`vim`, `htop`, `nmap`, etc.) se instala cuando surge la necesidad real.
+Ver [10-software.md](10-software.md) para herramientas adicionales.
 
 ---
 

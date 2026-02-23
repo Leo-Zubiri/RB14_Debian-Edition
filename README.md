@@ -11,13 +11,13 @@ Documentacion acumulativa: cada seccion refleja el estado real del equipo.
 |-------------|---------------------------------------------|
 | Host        | Razer Blade 14 — RZ09-0482 (9.04)          |
 | OS          | Debian GNU/Linux 13 (trixie) x86_64        |
-| Kernel      | Linux 6.12.63+deb13-amd64                  |
+| Kernel      | Linux 6.12.73+deb13-amd64                  |
 | CPU         | AMD Ryzen 9 7940HS (16 threads) @ 5.26 GHz |
 | GPU         | NVIDIA RTX 4070 Max-Q + AMD Radeon 780M    |
 | RAM         | 30.57 GiB                                  |
 | Disco       | 904.43 GiB ext4                             |
 | Pantalla    | 2560x1600 @ 240 Hz (14", Built-in)         |
-| DE / WM     | GNOME 48.7 / Mutter (Wayland)              |
+| DE / WM     | GNOME 48.7 / Mutter (X11)                 |
 
 ---
 
@@ -43,10 +43,10 @@ Documentacion acumulativa: cada seccion refleja el estado real del equipo.
 | Seccion | Estado |
 |---------|--------|
 | Post-instalacion | Pendiente |
-| Drivers | Pendiente |
+| Drivers | Completado |
 | Seguridad | Pendiente |
 | Gestion de energia | Pendiente |
-| Pantalla | Pendiente |
+| Pantalla | Completado |
 | Audio | Pendiente |
 | Hardware Razer | Pendiente |
 | Red y VPN | Pendiente |
