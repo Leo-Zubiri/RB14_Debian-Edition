@@ -123,9 +123,75 @@ gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 40
 
 ---
 
+---
+
+## 7. Migración a Wayland
+
+### ¿Por qué Debian fuerza X11 con drivers privativos de NVIDIA?
+
+Al instalar los drivers privativos de NVIDIA, Debian detecta automáticamente que el
+driver propietario está activo y aplica una regla udev que **deshabilita Wayland**
+como medida de compatibilidad preventiva.
+
+El archivo responsable es:
+
+```
+/usr/lib/udev/rules.d/61-gdm.rules
+```
+
+Esta regla hace que GDM fuerce la sesión a **X11**, ignorando Wayland por completo.
+En X11, la escala solo soporta valores enteros (100%, 200%...), sin posibilidad de
+escalas fraccionadas nativas. **Wayland** soporta fractional scaling (125%, 150%,
+175%), ideal para la pantalla 2560x1600 del Razer Blade 14.
+
+### Pasos para habilitar Wayland
+
+**1. Habilitar nvidia-drm modesetting**
+
+```bash
+sudo nano /etc/default/grub
+```
+
+Agregar `nvidia-drm.modeset=1` en `GRUB_CMDLINE_LINUX_DEFAULT`:
+
+```
+GRUB_CMDLINE_LINUX_DEFAULT="quiet nvidia-drm.modeset=1"
+```
+
+```bash
+sudo update-grub
+```
+
+**2. Anular la regla que fuerza X11**
+
+```bash
+sudo ln -s /dev/null /etc/udev/rules.d/61-gdm.rules
+```
+
+Crea un symlink a `/dev/null` que neutraliza la regla original sin eliminarla.
+
+**3. Reiniciar y seleccionar sesión Wayland**
+
+En la pantalla de login, hacer clic en el engrane (⚙) antes de ingresar la
+contraseña y seleccionar **GNOME (Wayland)**.
+
+**4. Activar fractional scaling**
+
+```bash
+gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
+```
+
+Luego ir a **Configuración → Pantallas** y seleccionar la escala deseada.
+
+---
+
 ## Notas
 
 - La escala fraccional nativa de GNOME (experimental-features) no aplica en X11.
 - `text-scaling-factor` escala el texto y la UI pero no el framebuffer completo;
   es la solución correcta para X11 en pantallas HiDPI.
 - Los cambios en `greeter.dconf-defaults` requieren `dconf update` para aplicarse.
+- Algunas apps sin soporte Wayland nativo (Electron, Qt antiguas) correrán en modo
+  **XWayland** y pueden verse ligeramente borrosas.
+- Para volver a X11: seleccionar **GNOME (X11)** desde el engrane en el login.
+- Para deshacer la anulación de udev: `sudo rm /etc/udev/rules.d/61-gdm.rules`
