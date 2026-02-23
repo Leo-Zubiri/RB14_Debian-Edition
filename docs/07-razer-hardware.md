@@ -1,6 +1,6 @@
 # 07 — Hardware Razer
 
-## Estado: Pendiente
+## Estado: En Progreso
 
 ---
 
@@ -15,55 +15,67 @@
 
 ## 1. OpenRazer
 
-OpenRazer es el driver open-source para hardware Razer en Linux.
+OpenRazer es el driver open-source para hardware Razer en Linux. Incluye un daemon (`openrazer-daemon`) y módulos de kernel que exponen el hardware (teclado RGB, touchpad, etc.) como dispositivos controlables.
 
-### Instalacion
+**`openrazer-meta`** es un metapaquete que instala el daemon, los módulos DKMS y las dependencias de Python.
 
-La forma mas segura en Debian es via el repositorio oficial de OpenRazer:
+### Por qué repositorio externo y no el de Debian
 
-```bash
-sudo apt install -y software-properties-common
-sudo add-apt-repository ppa:openrazer/stable 2>/dev/null || \
-  echo "deb http://download.opensuse.org/repositories/hardware:/razer/Debian_Testing/ /" \
-    | sudo tee /etc/apt/sources.list.d/openrazer.list
+OpenRazer **no está en los repositorios oficiales de Debian Trixie**. El proyecto mantiene su propio repositorio en OpenSUSE Build Service con paquetes actualizados para cada distribución, incluyendo `Debian_13`.
 
-# Alternativa: instalar desde el repo de Debian directamente
-sudo apt install -y openrazer-meta
-```
-
-> Nota: verificar disponibilidad en Debian Trixie antes de agregar repos externos.
-> Preferir el paquete de Debian si existe: `apt search openrazer`
-
-Agregar usuario al grupo `plugdev`:
+### Instalación aplicada
 
 ```bash
+# Agregar repositorio
+echo 'deb http://download.opensuse.org/repositories/hardware:/razer/Debian_13/ /' \
+  | sudo tee /etc/apt/sources.list.d/hardware:razer.list
+
+# Importar clave GPG del repositorio
+curl -fsSL https://download.opensuse.org/repositories/hardware:razer/Debian_13/Release.key \
+  | gpg --dearmor \
+  | sudo tee /etc/apt/trusted.gpg.d/hardware_razer.gpg > /dev/null
+
+sudo apt update
+sudo apt install openrazer-meta
+
+# Agregar usuario al grupo plugdev (acceso a dispositivos USB)
 sudo gpasswd -a $USER plugdev
 ```
 
-Reboot o re-login para que el grupo tome efecto.
+El grupo `plugdev` es necesario para que `openrazer-daemon` tenga acceso a los dispositivos sin requerir root. Requiere **cerrar sesión y volver a entrar** (o reiniciar) para que tome efecto.
 
 ### Verificar
 
 ```bash
-sudo openrazer-daemon --version
-openrazer-daemon -Fv &       # iniciar daemon en modo verbose
+groups $USER | grep plugdev          # confirmar membresía al grupo
+systemctl --user status openrazer-daemon
 ```
 
 ---
 
 ## 2. Polychromatic (GUI)
 
-```bash
-# Buscar en repositorios
-sudo apt search polychromatic
+Polychromatic es la interfaz gráfica para OpenRazer. Permite controlar el RGB del teclado, crear efectos y perfiles. El proyecto mantiene su propio repositorio Debian.
 
-# O instalar via Flatpak
-flatpak install flathub tech.joshimeson.polychromatic
+### Instalación aplicada
+
+```bash
+# Importar clave GPG
+curl -fsSL 'https://debian.polychromatic.app/key.asc' \
+  | sudo gpg --dearmour -o /usr/share/keyrings/polychromatic.gpg
+
+# Agregar repositorio (usa $VERSION_CODENAME = trixie)
+source /etc/os-release
+echo "deb [signed-by=/usr/share/keyrings/polychromatic.gpg] https://debian.polychromatic.app $VERSION_CODENAME main" \
+  | sudo tee /etc/apt/sources.list.d/polychromatic.list
+
+sudo apt-get update
+sudo apt install polychromatic
 ```
 
 Polychromatic permite:
-- Cambiar efectos de iluminacion del teclado (estatico, respiracion, onda, etc.)
-- Perfiles por aplicacion
+- Cambiar efectos de iluminación del teclado (estático, respiración, onda, etc.)
+- Perfiles por aplicación
 - Control de DPI si hay mouse Razer
 
 ---
