@@ -150,13 +150,16 @@ Editar `/etc/default/grub`:
 sudo nano /etc/default/grub
 ```
 
-Agregar a `GRUB_CMDLINE_LINUX_DEFAULT`:
+La línea resultante en `/etc/default/grub`:
 
 ```
-amd_pstate=active
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active loglevel=3"
 ```
+
+Parámetros aplicados:
 
 - `amd_pstate=active` — driver de P-states moderno para Ryzen (mejor eficiencia energética)
+- `loglevel=3` — suprime warnings del kernel durante el boot (solo errores críticos visibles); el default es 4 (`WARNING`) pero algunos mensajes informativos aparecen igualmente sin este parámetro
 
 ```bash
 sudo update-grub
