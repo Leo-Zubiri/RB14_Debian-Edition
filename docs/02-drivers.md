@@ -175,7 +175,46 @@ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
 
 ---
 
-## 7. Verificacion completa
+## 7. Tema visual de GRUB
+
+El GRUB por defecto es muy básico. Se instala un tema con resolución 2K para que se
+vea correctamente en la pantalla 2560×1600 del Blade 14.
+
+### Instalación
+
+```bash
+sudo apt install git
+git clone https://github.com/vinceliuice/grub2-themes.git
+cd grub2-themes
+sudo ./install.sh -t tela -s 2k
+sudo update-grub
+```
+
+El script instala el tema en `/boot/grub/themes/` y agrega la referencia en
+`/etc/default/grub` automáticamente.
+
+### Temas disponibles
+
+| Nombre | Estilo |
+|--------|--------|
+| `tela` | Minimalista y moderno |
+| `vimix` | Oscuro con degradados |
+| `stylish` | Elegante y limpio |
+| `whitesur` | Estilo macOS |
+
+### Cambiar de tema
+
+```bash
+cd grub2-themes
+sudo ./install.sh -t vimix -s 2k
+sudo update-grub
+```
+
+Solo cambiar el valor de `-t` y reiniciar para ver el resultado.
+
+---
+
+## 8. Verificacion completa
 
 ```bash
 # NVIDIA cargado
