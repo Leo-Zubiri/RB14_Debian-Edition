@@ -54,6 +54,11 @@
 
 ---
 
+## Activar botones de minimizar y maximizar
+```bash
+gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+```
+
 ## Uso
 
 Cada archivo en `docs/` documenta el contexto del problema, los comandos exactos
